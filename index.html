@@ -3,189 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FR COLOR - TASTO X SMARTPHONE FIX</title>
+    <title>FR COLOR - STABILE</title>
     <style>
         :root { --accent: #00ff88; --bg: #000; }
-        * { box-sizing: border-box; touch-action: none; }
-        body { 
-            margin: 0; font-family: sans-serif; background: var(--bg); color: white; 
-            height: 100vh; height: -webkit-fill-available;
-            display: flex; flex-direction: column; overflow: hidden; 
-        }
+        * { box-sizing: border-box; touch-action: none; -webkit-user-select: none; }
+        body { margin: 0; font-family: sans-serif; background: var(--bg); color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-        /* HEADER BLOCCATO */
-        .top-bar { height: 60px; padding: 10px; background: #1a1a1a; display: flex; gap: 8px; border-bottom: 2px solid var(--accent); align-items: center; }
-        
-        /* AREA LAVORO - IL CUORE DEL FIX */
-        #viewport { 
-            flex: 1; position: relative; display: flex; background: #0a0a0a; overflow: hidden;
-        }
-        
-        .zoom-sidebar { 
-            width: 45px; background: #111; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; gap: 15px; border-right: 1px solid #333; 
-        }
-        .zoom-slider { appearance: slider-vertical; width: 20px; height: 160px; }
-
-        #canvas-wrapper { 
-            flex: 1; overflow: auto; display: flex; justify-content: center; align-items: center;
-            background-image: radial-gradient(#222 1px, transparent 1px); background-size: 20px 20px;
-        }
-        canvas { 
-            cursor: crosshair; transform-origin: center center; 
-            max-width: none; /* Impedisce al browser di rimpicciolire forzatamente */
-        }
-
-        /* FOOTER BLOCCATO AL FONDO */
-        .bottom-bar { 
-            height: 165px; padding: 12px; background: #1a1a1a; border-top: 1px solid #333; 
-        }
-        .btn { padding: 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; }
+        /* HEADER FISSO - 55px */
+        .header { height: 55px; background: #1a1a1a; display: flex; padding: 5px; gap: 5px; border-bottom: 2px solid var(--accent); }
+        .btn { border: none; border-radius: 4px; font-weight: bold; font-size: 10px; cursor: pointer; color: white; background: #333; flex: 1; text-transform: uppercase; }
         .btn-main { background: var(--accent); color: black; }
-        .btn-sec { background: #333; color: white; border: 1px solid #555; }
+
+        /* AREA LAVORO CENTRALE */
+        #work-area { flex: 1; display: flex; overflow: hidden; position: relative; background: #080808; }
         
-        .selector-group { display: flex; gap: 8px; margin-bottom: 10px; }
-        .m-btn { flex: 1; padding: 10px; border: none; border-radius: 4px; background: #222; color: #777; font-size: 11px; font-weight: bold; }
+        /* BARRA ZOOM LATERALE */
+        .zoom-bar { width: 40px; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid #333; z-index: 5; }
+        .zoom-slider { appearance: slider-vertical; width: 18px; height: 140px; cursor: pointer; }
+
+        /* CONTENITORE CANVAS */
+        #viewport { flex: 1; position: relative; overflow: auto; display: flex; align-items: center; justify-content: center; }
+        canvas { transform-origin: center center; display: block; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+
+        /* FOOTER FISSO - 145px */
+        .footer { height: 145px; background: #1a1a1a; padding: 8px; border-top: 2px solid #333; display: flex; flex-direction: column; gap: 8px; }
+        
+        .mode-row { display: flex; gap: 5px; height: 35px; }
+        .m-btn { flex: 1; border: none; border-radius: 4px; background: #222; color: #666; font-size: 9px; font-weight: bold; }
         .m-btn.active { background: var(--accent); color: black; }
 
-        .ral-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        select { width: 100%; padding: 10px; background: #2a2a2a; color: white; border: 1px solid var(--accent); border-radius: 6px; font-size: 13px; }
-        label { font-size: 10px; color: var(--accent); display: block; margin-bottom: 4px; text-transform: uppercase; }
+        .ral-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .ral-box { display: flex; flex-direction: column; }
+        label { font-size: 8px; color: var(--accent); margin-bottom: 2px; text-transform: uppercase; font-weight: bold; }
+        select { background: #2a2a2a; color: white; border: 1px solid var(--accent); padding: 5px; border-radius: 4px; font-size: 11px; }
+        
+        .save-btn { height: 35px; background: #444; color: white; font-weight: bold; border-radius: 4px; border: none; font-size: 11px; }
     </style>
 </head>
 <body>
 
-<div class="top-bar">
-    <button class="btn btn-main" onclick="document.getElementById('cap').click()">FOTO HD</button>
-    <input type="file" id="cap" accept="image/*" capture="environment" style="display:none">
-    <button class="btn btn-sec" onclick="document.getElementById('up').click()">CARICA</button>
-    <input type="file" id="up" accept="image/*" style="display:none">
-    <button class="btn btn-sec" style="flex:1" onclick="undo()">ANNULLA</button>
+<div class="header">
+    <button class="btn btn-main" onclick="document.getElementById('c').click()">FOTO HD</button>
+    <input type="file" id="c" accept="image/*" capture="environment" style="display:none">
+    <button class="btn" onclick="document.getElementById('u').click()">CARICA</button>
+    <input type="file" id="u" accept="image/*" style="display:none">
+    <button class="btn" onclick="undo()">BACK</button>
 </div>
 
-<div id="viewport">
-    <div class="zoom-sidebar">
-        <span style="font-weight:bold">+</span>
-        <input type="range" id="z" class="zoom-slider" min="0.1" max="3" step="0.1" value="1">
-        <span style="font-weight:bold">-</span>
+<div id="work-area">
+    <div class="zoom-bar">
+        <span style="font-size:12px; margin-bottom:10px;">+</span>
+        <input type="range" id="z" class="zoom-slider" min="0.1" max="3" step="0.05" value="1">
+        <span style="font-size:12px; margin-top:10px;">-</span>
     </div>
-    <div id="canvas-wrapper">
+    <div id="viewport">
         <canvas id="canvas"></canvas>
     </div>
 </div>
 
-<div class="bottom-bar">
-    <div class="selector-group">
-        <button id="m-fac" class="m-btn active" onclick="setM('facciata')">FACCIATA</button>
-        <button id="m-cor" class="m-btn" onclick="setM('cornice')">CORNICE</button>
+<div class="footer">
+    <div class="mode-row">
+        <button id="f-btn" class="m-btn active" onclick="setMode('f')">USA RAL FACCIATA</button>
+        <button id="c-btn" class="m-btn" onclick="setMode('c')">USA RAL CORNICE</button>
     </div>
     <div class="ral-grid">
-        <div>
+        <div class="ral-box">
             <label>RAL Facciata</label>
-            <select id="r-f">
+            <select id="sel-f">
                 <option value="120,129,133">RAL 7000</option>
                 <option value="164,146,129">RAL 1019</option>
                 <option value="60,60,60">RAL 7016</option>
                 <option value="232,226,204">RAL 1013</option>
             </select>
         </div>
-        <div>
+        <div class="ral-box">
             <label>RAL Cornice</label>
-            <select id="r-c">
-                <option value="241,236,225">RAL 9010</option>
+            <select id="sel-c">
                 <option value="232,226,204">RAL 1013</option>
+                <option value="241,236,225">RAL 9010</option>
                 <option value="30,84,109">RAL 5009</option>
             </select>
         </div>
     </div>
-    <button class="btn btn-sec" style="width:100%; margin-top:10px; background:#444;" onclick="save()">SALVA PROGETTO</button>
+    <button class="save-btn" onclick="save()">SALVA PROGETTO</button>
 </div>
 
 <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d', {willReadFrequently: true});
     const z = document.getElementById('z');
-    const wrapper = document.getElementById('canvas-wrapper');
-    let ori = null;
-    let hist = [];
-    let mode = 'facciata';
+    const view = document.getElementById('viewport');
+    let ori = null, hist = [], mode = 'f';
 
-    const load = (e) => {
-        const f = e.target.files[0];
-        if(!f) return;
-        const r = new FileReader();
-        r.onload = (ev) => {
-            const i = new Image();
-            i.onload = () => {
-                // Calcoliamo la scala per far stare la foto nel riquadro senza zoom
-                const maxWidth = wrapper.clientWidth * 0.9;
-                const maxHeight = wrapper.clientHeight * 0.9;
-                const ratio = Math.min(maxWidth / i.width, maxHeight / i.height, 1);
-                
-                canvas.width = i.width;
-                canvas.height = i.height;
-                ctx.drawImage(i, 0, 0);
-                
+    const handler = (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
                 ori = ctx.getImageData(0,0,canvas.width,canvas.height);
                 hist = [ctx.getImageData(0,0,canvas.width,canvas.height)];
                 
-                // Set iniziale: la foto si adatta al box
-                z.value = ratio.toFixed(2);
+                // Forza la foto a stare nel riquadro
+                const ratio = Math.min(view.clientWidth / img.width, view.clientHeight / img.height) * 0.95;
+                z.value = ratio;
                 applyZ();
             };
-            i.src = ev.target.result;
+            img.src = ev.target.result;
         };
-        r.readAsDataURL(f);
+        reader.readAsDataURL(file);
     };
+    document.getElementById('c').onchange = handler;
+    document.getElementById('u').onchange = handler;
 
-    document.getElementById('cap').onchange = load;
-    document.getElementById('up').onchange = load;
-
-    function setM(m) {
+    function setMode(m) {
         mode = m;
-        document.getElementById('m-fac').classList.toggle('active', m === 'facciata');
-        document.getElementById('m-cor').classList.toggle('active', m === 'cornice');
+        document.getElementById('f-btn').classList.toggle('active', m === 'f');
+        document.getElementById('c-btn').classList.toggle('active', m === 'c');
     }
 
     z.oninput = applyZ;
-    function applyZ() { 
-        canvas.style.transform = `scale(${z.value})`; 
-    }
+    function applyZ() { canvas.style.transform = `scale(${z.value})`; }
 
     canvas.onclick = (e) => {
         if(!ori) return;
-        const rec = canvas.getBoundingClientRect();
+        const rect = canvas.getBoundingClientRect();
         const s = z.value;
-        const x = Math.round((e.clientX - rec.left) / s);
-        const y = Math.round((e.clientY - rec.top) / s);
-        const rgb = (mode === 'facciata' ? document.getElementById('r-f').value : document.getElementById('r-c').value).split(',').map(Number);
-        fill(x, y, rgb);
+        const x = Math.round((e.clientX - rect.left) / s);
+        const y = Math.round((e.clientY - rect.top) / s);
+        const color = (mode === 'f' ? document.getElementById('sel-f').value : document.getElementById('sel-c').value).split(',').map(Number);
+        flood(x, y, color);
     };
 
-    function fill(sx, sy, col) {
-        const cur = ctx.getImageData(0,0,canvas.width,canvas.height);
-        const d = cur.data, w = canvas.width, st = [[sx, sy]];
+    function flood(sx, sy, col) {
+        const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+        const d = img.data, w = canvas.width, h = canvas.height;
+        const stack = [[sx, sy]];
         const p = (sy*w+sx)*4;
         const sR = d[p], sG = d[p+1], sB = d[p+2];
-        const vis = new Uint8Array(w * canvas.height);
-        while(st.length) {
-            const [cx, cy] = st.pop();
-            const idx = cy*w+cx;
-            if(cx<0||cx>=w||cy<0||cy>=canvas.height||vis[idx]) continue;
-            vis[idx]=1;
-            const pos = idx*4;
+        const vis = new Uint8Array(w * h);
+
+        while(stack.length) {
+            const [cx, cy] = stack.pop();
+            const i = cy*w+cx;
+            if(cx<0||cx>=w||cy<0||cy>=h||vis[i]) continue;
+            vis[i]=1;
+            const pos = i*4;
             if(Math.abs(d[pos]-sR)+Math.abs(d[pos+1]-sG)+Math.abs(d[pos+2]-sB) < 65) {
-                const l = (0.299*ori.data[pos]+0.587*ori.data[pos+1]+0.114*ori.data[pos+2])/255;
-                d[pos]=col[0]*l; d[pos+1]=col[1]*l; d[pos+2]=col[2]*l;
-                st.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
+                const lum = (0.299*ori.data[pos]+0.587*ori.data[pos+1]+0.114*ori.data[pos+2])/255;
+                d[pos]=col[0]*lum; d[pos+1]=col[1]*lum; d[pos+2]=col[2]*lum;
+                stack.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
             }
         }
-        ctx.putImageData(cur,0,0);
+        ctx.putImageData(img,0,0);
         hist.push(ctx.getImageData(0,0,canvas.width,canvas.height));
     }
 
     function undo() { if(hist.length > 1) { hist.pop(); ctx.putImageData(hist[hist.length-1],0,0); } }
-    function save() { const l = document.createElement('a'); l.download='progetto.png'; l.href=canvas.toDataURL(); l.click(); }
+    function save() { const l = document.createElement('a'); l.download='fr_color.png'; l.href=canvas.toDataURL(); l.click(); }
 </script>
 </body>
 </html>
