@@ -1,66 +1,76 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TASTO X - Configurazione Originale</title>
+    <title>TASTO X - PRO REALE</title>
+    <script src="https://unpkg.com/panzoom@9.4.0/dist/panzoom.min.js"></script>
     <style>
         :root { --accent: #00ff88; --bg: #121212; }
-        body { margin: 0; font-family: sans-serif; background: var(--bg); color: white; display: flex; flex-direction: column; height: 100vh; }
-        header { padding: 10px; background: #000; text-align: center; border-bottom: 2px solid var(--accent); font-weight: bold; }
+        body { margin: 0; font-family: sans-serif; background: var(--bg); color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { padding: 10px; background: #000; text-align: center; border-bottom: 2px solid var(--accent); font-size: 14px; }
         
-        #viewer { flex: 1; position: relative; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        canvas { max-width: 100%; max-height: 100%; cursor: crosshair; touch-action: none; }
+        #viewport { flex: 1; position: relative; background: #000; overflow: hidden; cursor: crosshair; }
+        #canvas { display: block; }
 
-        .controls { background: #1a1a1a; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid #333; }
+        .controls { background: #1a1a1a; padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border-top: 1px solid #333; }
         .full { grid-column: span 2; }
         
-        .btn { background: #333; color: white; border: 1px solid #555; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .btn-main { background: var(--accent); color: black; border: none; }
-        
-        select { background: #2a2a2a; color: white; border: 1px solid var(--accent); padding: 12px; border-radius: 8px; width: 100%; font-size: 14px; }
-        label { display: block; font-size: 10px; color: var(--accent); margin-bottom: 4px; text-transform: uppercase; }
+        .mode-selector { display: flex; gap: 5px; background: #000; padding: 5px; border-radius: 8px; }
+        .mode-btn { flex: 1; padding: 10px; border: none; border-radius: 5px; background: #333; color: #888; font-size: 12px; font-weight: bold; }
+        .mode-btn.active { background: var(--accent); color: black; }
+
+        .btn { background: #333; color: white; border: 1px solid #555; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 13px; }
+        select { background: #2a2a2a; color: white; border: 1px solid var(--accent); padding: 10px; border-radius: 8px; width: 100%; }
+        label { display: block; font-size: 9px; color: var(--accent); margin-bottom: 3px; }
     </style>
 </head>
 <body>
 
-<header>TASTO X | Versione Selettori Separati</header>
+<header>TASTO X | Zoom & Manual Mode</header>
 
-<div id="viewer">
+<div id="viewport">
     <canvas id="canvas"></canvas>
 </div>
 
 <div class="controls">
     <div class="full">
-        <button class="btn btn-main" style="width:100%" onclick="document.getElementById('file').click()">CARICA FOTO CANTIERE</button>
+        <button class="btn" style="width:100%; background:var(--accent); color:black;" onclick="document.getElementById('file').click()">CARICA FOTO</button>
         <input type="file" id="file" accept="image/*" style="display:none">
     </div>
 
-    <div>
-        <label>Zona 1: Facciata</label>
-        <select id="ral-muro">
-            <option value="120,129,133">RAL 7000</option>
-            <option value="164,146,129">RAL 1019</option>
-            <option value="60,60,60">RAL 7016</option>
-        </select>
+    <div class="full">
+        <label>1. Seleziona cosa vuoi colorare:</label>
+        <div class="mode-selector">
+            <button id="btn-muro" class="mode-btn active" onclick="setMode('muro')">FACCIATA</button>
+            <button id="btn-cornice" class="mode-btn" onclick="setMode('cornice')">CORNICI</button>
+        </div>
     </div>
 
     <div>
-        <label>Zona 2: Cornici</label>
-        <select id="ral-cornice">
-            <option value="241,236,225">RAL 9010</option>
-            <option value="30,84,109">RAL 5009</option>
+        <label>2. Scegli RAL:</label>
+        <select id="ral-val">
+            <option value="120,129,133">RAL 7000 (Grigio)</option>
+            <option value="232,226,204">RAL 1013 (Bianco Perla)</option>
+            <option value="164,146,129">RAL 1019 (Sabbia)</option>
+            <option value="60,60,60">RAL 7016 (Antracite)</option>
         </select>
     </div>
 
-    <button class="btn" onclick="undo()">RESET</button>
-    <button class="btn" onclick="save()">SALVA</button>
+    <div style="display:flex; gap:5px; align-items:flex-end;">
+        <button class="btn" style="flex:1" onclick="undo()">ANNULLA</button>
+        <button class="btn" style="flex:1" onclick="save()">SALVA</button>
+    </div>
+    <div class="full" style="text-align:center; font-size:10px; color:#666;">Pizzica lo schermo per zoomare</div>
 </div>
 
 <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d', {willReadFrequently: true});
-    let originalData = null;
+    let history = [];
+    let currentMode = 'muro';
+    let pz;
 
     document.getElementById('file').onchange = (e) => {
         const reader = new FileReader();
@@ -70,35 +80,45 @@
                 canvas.width = img.width;
                 canvas.height = img.height;
                 ctx.drawImage(img, 0, 0);
-                originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                saveHistory();
+                if(pz) pz.dispose();
+                pz = panzoom(canvas, { maxZoom: 5, minZoom: 0.5, bounds: true });
             };
             img.src = ev.target.result;
         };
         reader.readAsDataURL(e.target.files[0]);
     };
 
-    canvas.onclick = (e) => {
-        if (!originalData) return;
+    function setMode(m) {
+        currentMode = m;
+        document.getElementById('btn-muro').classList.toggle('active', m === 'muro');
+        document.getElementById('btn-cornice').classList.toggle('active', m === 'cornice');
+    }
+
+    canvas.addEventListener('mousedown', handleAction);
+    canvas.addEventListener('touchstart', handleAction);
+
+    function handleAction(e) {
+        // Se si usano due dita, è uno zoom, non colorare
+        if (e.touches && e.touches.length > 1) return;
+        
         const rect = canvas.getBoundingClientRect();
-        const x = Math.round((e.clientX - rect.left) * (canvas.width / rect.width));
-        const y = Math.round((e.clientY - rect.top) * (canvas.height / rect.height));
+        const transform = pz.getTransform();
         
-        // Identifica se l'utente sta toccando una zona chiara (cornice) o scura (muro)
-        const pixelPos = (y * canvas.width + x) * 4;
-        const r = originalData.data[pixelPos];
-        const g = originalData.data[pixelPos+1];
-        const b = originalData.data[pixelPos+2];
-        const isBright = (r > 175 && g > 175 && b > 175);
+        let clientX = e.clientX || e.touches[0].clientX;
+        let clientY = e.clientY || e.touches[0].clientY;
 
-        const colorStr = isBright ? document.getElementById('ral-cornice').value : document.getElementById('ral-muro').value;
-        const color = colorStr.split(',').map(Number);
-        
-        applySmartColor(x, y, color);
-    };
+        const x = Math.round(((clientX - rect.left) / transform.scale) * (canvas.width / (rect.width / transform.scale)));
+        const y = Math.round(((clientY - rect.top) / transform.scale) * (canvas.height / (rect.height / transform.scale)));
 
-    function applySmartColor(startX, startY, fillColor) {
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
+        const rgb = document.getElementById('ral-val').value.split(',').map(Number);
+        saveHistory();
+        applySmartFill(x, y, rgb);
+    }
+
+    function applySmartFill(startX, startY, fillColor) {
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
         const w = canvas.width;
         const h = canvas.height;
 
@@ -107,7 +127,7 @@
         const sR = data[startPos], sG = data[startPos+1], sB = data[startPos+2];
         
         const visited = new Uint8Array(w * h);
-        const tolerance = 70; // Tolleranza per scavalcare le ombre
+        const tolerance = 60; 
 
         while (stack.length) {
             const [x, y] = stack.pop();
@@ -121,19 +141,31 @@
             const diff = Math.abs(r - sR) + Math.abs(g - sG) + Math.abs(b - sB);
 
             if (diff < tolerance) {
-                const lux = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-                data[pos]   = fillColor[0] * (lux * 1.1);
-                data[pos+1] = fillColor[1] * (lux * 1.1);
-                data[pos+2] = fillColor[2] * (lux * 1.1);
-
-                stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+                const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                data[pos]   = fillColor[0] * (lum * 1.1);
+                data[pos+1] = fillColor[1] * (lum * 1.1);
+                data[pos+2] = fillColor[2] * (lum * 1.1);
+                stack.push([x+1, y], [x-1, y], [x, y+1], [x, y-1]);
             }
         }
-        ctx.putImageData(imageData, 0, 0);
+        ctx.putImageData(imgData, 0, 0);
     }
 
-    function undo() { if(originalData) ctx.putImageData(originalData, 0, 0); }
-    function save() { window.open(canvas.toDataURL()); }
+    function saveHistory() {
+        if (history.length > 5) history.shift();
+        history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    }
+
+    function undo() {
+        if (history.length > 0) ctx.putImageData(history.pop(), 0, 0);
+    }
+
+    function save() {
+        const link = document.createElement('a');
+        link.download = 'progetto-frcolor.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    }
 </script>
 </body>
 </html>
