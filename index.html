@@ -3,103 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TASTO X - Test Motore Confini</title>
+    <title>TASTO X - Solid Test</title>
     <style>
-        body { margin: 0; background: #121212; color: white; font-family: sans-serif; text-align: center; }
-        canvas { max-width: 100%; height: auto; margin-top: 10px; border: 1px solid #444; }
-        .ui { padding: 20px; background: #1a1a1a; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-        .btn { padding: 15px; background: #333; color: white; border: 1px solid var(--acc); border-radius: 8px; cursor: pointer; }
-        select { padding: 15px; background: #222; color: white; border-radius: 8px; border: 1px solid #00ff88; }
+        body { margin: 0; background: #121212; color: white; font-family: sans-serif; }
+        .header { padding: 15px; background: #000; text-align: center; border-bottom: 2px solid #00ff88; }
+        .ui { padding: 15px; display: flex; justify-content: center; gap: 10px; background: #1a1a1a; }
+        canvas { display: block; margin: 0 auto; max-width: 100%; height: auto; cursor: crosshair; }
+        .btn { padding: 12px 20px; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; }
+        #ral-select { padding: 12px; border-radius: 5px; background: #333; color: white; border: 1px solid #00ff88; }
     </style>
 </head>
 <body>
 
+<div class="header">TASTO X - REVISIONE 01</div>
+
 <div class="ui">
     <input type="file" id="upload" accept="image/*" style="display:none">
-    <button class="btn" style="background:#00ff88; color:black;" onclick="document.getElementById('upload').click()">CARICA FOTO</button>
+    <button class="btn" style="background:#00ff88;" onclick="document.getElementById('upload').click()">CARICA FOTO</button>
     
-    <select id="ral">
-        <option value="120,129,133">RAL 7000 (Muro)</option>
-        <option value="241,236,225">RAL 9010 (Bianco Cornici)</option>
+    <select id="ral-select">
+        <option value="120,129,133">RAL 7000 (Grigio)</option>
+        <option value="241,236,225">RAL 9010 (Bianco)</option>
         <option value="30,84,109">RAL 5009 (Azzurro)</option>
+        <option value="60,60,60">RAL 7016 (Antracite)</option>
     </select>
-    
-    <button class="btn" onclick="undo()">ANNULLA</button>
+
+    <button class="btn" style="background:#444; color:white;" onclick="resetImage()">RESET</button>
 </div>
 
-<div id="canvas-wrap">
-    <canvas id="canvas"></canvas>
-</div>
+<canvas id="canvas"></canvas>
 
 <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d', {willReadFrequently: true});
-    let originalData = null;
+    let originalImageData = null;
 
+    // Caricamento Immagine
     document.getElementById('upload').onchange = (e) => {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            const img = new Image();
-            img.onload = () => {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-                originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            };
-            img.src = ev.target.result;
+        const img = new Image();
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         };
-        reader.readAsDataURL(e.target.files[0]);
+        img.src = URL.createObjectURL(e.target.files[0]);
     };
 
+    // Al click sulla foto
     canvas.onclick = (e) => {
-        if (!originalData) return;
+        if (!originalImageData) return;
         const rect = canvas.getBoundingClientRect();
-        const x = Math.round((e.clientX - rect.left) * (canvas.width / rect.width));
-        const y = Math.round((e.clientY - rect.top) * (canvas.height / rect.height));
+        const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
+        const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
         
-        const rgb = document.getElementById('ral').value.split(',').map(Number);
-        smartFill(x, y, rgb);
+        const rgb = document.getElementById('ral-select').value.split(',').map(Number);
+        applyColor(x, y, rgb);
     };
 
-    function smartFill(startX, startY, fillColor) {
+    function applyColor(startX, startY, targetRGB) {
         const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imgData.data;
         const w = canvas.width;
-        
-        // Lettura del punto toccato
+        const h = canvas.height;
+
         const startPos = (startY * w + startX) * 4;
         const sR = data[startPos], sG = data[startPos+1], sB = data[startPos+2];
-        
+
+        // FLOOD FILL con tolleranza per le OMBRE
         const stack = [[startX, startY]];
-        const visited = new Uint8Array(w * canvas.height);
-        
-        // TOLLERANZA DINAMICA: Più alta per ignorare le ombre, più bassa per i bordi netti
-        const tolerance = 65; 
+        const visited = new Uint8Array(w * h);
+        const tolerance = 75; // Alzata per non fermarsi alle ombre medie
 
-        while (stack.length) {
+        while (stack.length > 0) {
             const [x, y] = stack.pop();
-            const pos = (y * w + x) * 4;
-            const vIdx = y * w + x;
+            const idx = y * w + x;
+            const pos = idx * 4;
 
-            if (x < 0 || x >= w || y < 0 || y >= canvas.height || visited[vIdx]) continue;
-            visited[vIdx] = 1;
+            if (x < 0 || x >= w || y < 0 || y >= h || visited[idx]) continue;
+            visited[idx] = 1;
 
             const r = data[pos], g = data[pos+1], b = data[pos+2];
             
-            // CALCOLO DISTANZA COLORE (Delta)
-            // Usiamo una formula che pesa meno la luminosità e più la tinta (Chrome vs Ombra)
-            const diff = Math.sqrt(
-                Math.pow(r - sR, 2) * 0.3 + 
-                Math.pow(g - sG, 2) * 0.59 + 
-                Math.pow(b - sB, 2) * 0.11
-            );
+            // Calcolo differenza colore ignorando parzialmente la luminosità (per scavalcare l'ombra)
+            const diff = Math.abs(r - sR) + Math.abs(g - sG) + Math.abs(b - sB);
 
             if (diff < tolerance) {
-                // Manteniamo la luce originale
-                const lux = (0.299 * r + 0.587 * g + 0.114 * b) / 200; // Calibrazione esposizione
-                data[pos] = fillColor[0] * lux;
-                data[pos+1] = fillColor[1] * lux;
-                data[pos+2] = fillColor[2] * lux;
+                // Mantiene il sottofondo (Luminanza originale)
+                const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                data[pos]   = targetRGB[0] * (lum * 1.1);
+                data[pos+1] = targetRGB[1] * (lum * 1.1);
+                data[pos+2] = targetRGB[2] * (lum * 1.1);
 
                 stack.push([x+1, y], [x-1, y], [x, y+1], [x, y-1]);
             }
@@ -107,7 +101,9 @@
         ctx.putImageData(imgData, 0, 0);
     }
 
-    function undo() { if(originalData) ctx.putImageData(originalData, 0, 0); }
+    function resetImage() {
+        if (originalImageData) ctx.putImageData(originalImageData, 0, 0);
+    }
 </script>
 </body>
 </html>
