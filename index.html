@@ -1,75 +1,60 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TASTO X PRO - Fix Mobile</title>
+    <title>TASTO X - Precision Touch</title>
     <style>
-        :root { --bg: #0f0f0f; --accent: #00ff88; --panel: #1a1a1a; }
-        body { margin: 0; font-family: sans-serif; background: var(--bg); color: white; display: flex; flex-direction: column; height: 100vh; }
-        
-        /* Header compatto */
-        header { padding: 10px; background: #000; font-size: 14px; text-align: center; border-bottom: 2px solid var(--accent); }
-
-        /* Area Foto Massimizzata */
-        #viewer { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden; }
-        canvas { max-width: 100%; max-height: 100%; touch-action: none; }
-
-        /* Pannello Comandi Mobile Friendly */
-        .controls { background: var(--panel); padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .full-width { grid-column: span 2; }
-        
-        .btn { background: #333; color: white; border: 1px solid #555; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; width: 100%; }
-        .btn-upload { background: var(--accent); color: black; }
-        
-        select { background: #2a2a2a; color: white; border: 1px solid var(--accent); padding: 12px; border-radius: 8px; width: 100%; font-size: 14px; }
-        label { display: block; font-size: 10px; color: var(--accent); margin-bottom: 4px; text-transform: uppercase; }
+        :root { --accent: #00ff88; --bg: #121212; }
+        body { margin: 0; font-family: sans-serif; background: var(--bg); color: white; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        header { padding: 10px; background: #000; text-align: center; border-bottom: 2px solid var(--accent); font-weight: bold; }
+        #canvas-container { flex: 1; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #000; }
+        canvas { max-width: 100%; max-height: 100%; cursor: crosshair; touch-action: none; }
+        .ui { background: #1a1a1a; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid #333; }
+        .full { grid-column: span 2; }
+        .btn { background: #333; color: white; border: 1px solid #555; padding: 12px; border-radius: 8px; font-weight: bold; }
+        .btn-main { background: var(--accent); color: black; border: none; }
+        select { background: #2a2a2a; color: white; border: 1px solid var(--accent); padding: 12px; border-radius: 8px; width: 100%; }
+        .hint { grid-column: span 2; font-size: 11px; color: #888; text-align: center; margin-top: -5px; }
     </style>
 </head>
 <body>
 
-<header>TASTO X | Laboratorio Professionale</header>
+<header>TASTO X | Precision Touch Edition</header>
 
-<div id="viewer">
+<div id="canvas-container">
     <canvas id="canvas"></canvas>
 </div>
 
-<div class="controls">
-    <div class="full-width">
-        <button class="btn btn-upload" onclick="document.getElementById('upload').click()">SCATTA O CARICA FOTO</button>
-        <input type="file" id="upload" accept="image/*" style="display:none">
+<div class="ui">
+    <div class="full">
+        <button class="btn btn-main" style="width:100%" onclick="document.getElementById('file').click()">CARICA FOTO CANTIERE</button>
+        <input type="file" id="file" accept="image/*" style="display:none">
     </div>
+    
+    <div class="hint">1. Scegli il RAL -> 2. Tocca la zona sulla foto</div>
 
     <div>
-        <label>Colore Facciata</label>
-        <select id="color-muro" onchange="applyRendering()">
-            <option value="">Seleziona RAL...</option>
+        <select id="ral-select">
             <option value="120,129,133">RAL 7000</option>
             <option value="164,146,129">RAL 1019</option>
             <option value="60,60,60">RAL 7016</option>
-        </select>
-    </div>
-
-    <div>
-        <label>Colore Cornici</label>
-        <select id="color-cornice" onchange="applyRendering()">
-            <option value="">Seleziona RAL...</option>
             <option value="241,236,225">RAL 9010</option>
             <option value="30,84,109">RAL 5009</option>
         </select>
     </div>
 
-    <button class="btn" onclick="reset()">RESET</button>
-    <button class="btn" onclick="save()">SALVA RISULTATO</button>
+    <button class="btn" onclick="undo()">ANNULLA</button>
+    <button class="btn full" onclick="save()">SALVA PROGETTO</button>
 </div>
 
 <script>
     const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const ctx = canvas.getContext('2d', {willReadFrequently: true});
     let originalData = null;
+    let history = [];
 
-    document.getElementById('upload').onchange = function(e) {
+    document.getElementById('file').onchange = (e) => {
         const reader = new FileReader();
         reader.onload = (ev) => {
             const img = new Image();
@@ -84,30 +69,56 @@
         reader.readAsDataURL(e.target.files[0]);
     };
 
-    function applyRendering() {
+    canvas.onclick = (e) => {
         if (!originalData) return;
-        const cMuro = document.getElementById('color-muro').value.split(',');
-        const cCornice = document.getElementById('color-cornice').value.split(',');
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.round((e.clientX - rect.left) * (canvas.width / rect.width));
+        const y = Math.round((e.clientY - rect.top) * (canvas.height / rect.height));
+        
+        const color = document.getElementById('ral-select').value.split(',').map(Number);
+        floodFill(x, y, color);
+    };
 
-        const current = new ImageData(new Uint8ClampedArray(originalData.data), originalData.width, originalData.height);
-        const d = current.data;
+    function floodFill(startX, startY, fillColor) {
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        const width = canvas.width;
+        const height = canvas.height;
 
-        for (let i = 0; i < d.length; i += 4) {
-            const lux = (0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]) / 255;
-            
-            // Logica Avanzata: se il pixel è molto chiaro è probabilmente una cornice/marmo
-            const isBright = (d[i] > 170 && d[i+1] > 170 && d[i+2] > 170);
+        const stack = [[startX, startY]];
+        const startPos = (startY * width + startX) * 4;
+        const startR = data[startPos], startG = data[startPos+1], startB = data[startPos+2];
+        
+        const tolerance = 40; // Sensibilità ai bordi
 
-            if (isBright && cCornice.length > 1) {
-                d[i] = cCornice[0] * lux; d[i+1] = cCornice[1] * lux; d[i+2] = cCornice[2] * lux;
-            } else if (!isBright && cMuro.length > 1) {
-                d[i] = cMuro[0] * lux; d[i+1] = cMuro[1] * lux; d[i+2] = cMuro[2] * lux;
+        while (stack.length) {
+            const [x, y] = stack.pop();
+            const pos = (y * width + x) * 4;
+
+            if (x < 0 || x >= width || y < 0 || y >= height) continue;
+            if (data[pos + 3] === 254) continue; // Già colorato
+
+            const r = data[pos], g = data[pos+1], b = data[pos+2];
+            const diff = Math.abs(r - startR) + Math.abs(g - startG) + Math.abs(b - startB);
+
+            if (diff < tolerance) {
+                const lux = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+                data[pos] = fillColor[0] * lux;
+                data[pos+1] = fillColor[1] * lux;
+                data[pos+2] = fillColor[2] * lux;
+                data[pos+3] = 254; // Mark as visited
+
+                stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
             }
         }
-        ctx.putImageData(current, 0, 0);
+        
+        // Restore alpha channel
+        for(let i=3; i<data.length; i+=4) if(data[i] === 254) data[i] = 255;
+        
+        ctx.putImageData(imageData, 0, 0);
     }
 
-    function reset() { if(originalData) ctx.putImageData(originalData, 0, 0); }
+    function undo() { if(originalData) ctx.putImageData(originalData, 0, 0); }
     function save() { window.open(canvas.toDataURL()); }
 </script>
 </body>
