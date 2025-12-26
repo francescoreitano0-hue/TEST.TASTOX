@@ -1,40 +1,56 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FR COLOR - TASTO X FIX</title>
+    <title>FR COLOR - TASTO X SMARTPHONE FIX</title>
     <style>
         :root { --accent: #00ff88; --bg: #000; }
-        * { box-sizing: border-box; touch-action: manipulation; }
-        body { margin: 0; font-family: sans-serif; background: var(--bg); color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        * { box-sizing: border-box; touch-action: none; }
+        body { 
+            margin: 0; font-family: sans-serif; background: var(--bg); color: white; 
+            height: 100vh; height: -webkit-fill-available;
+            display: flex; flex-direction: column; overflow: hidden; 
+        }
 
-        /* HEADER COMPATTO */
-        .top-bar { padding: 8px; background: #1a1a1a; display: flex; gap: 5px; border-bottom: 2px solid var(--accent); }
+        /* HEADER BLOCCATO */
+        .top-bar { height: 60px; padding: 10px; background: #1a1a1a; display: flex; gap: 8px; border-bottom: 2px solid var(--accent); align-items: center; }
         
-        /* AREA FOTO - ADESSO SI ADATTA */
-        #viewport { flex: 1; position: relative; display: flex; overflow: hidden; justify-content: center; align-items: center; background: #0a0a0a; }
+        /* AREA LAVORO - IL CUORE DEL FIX */
+        #viewport { 
+            flex: 1; position: relative; display: flex; background: #0a0a0a; overflow: hidden;
+        }
         
-        .zoom-sidebar { width: 40px; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border-right: 1px solid #333; z-index: 10; }
-        .zoom-slider { appearance: slider-vertical; width: 20px; height: 150px; }
+        .zoom-sidebar { 
+            width: 45px; background: #111; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; gap: 15px; border-right: 1px solid #333; 
+        }
+        .zoom-slider { appearance: slider-vertical; width: 20px; height: 160px; }
 
-        #canvas-wrapper { flex: 1; height: 100%; overflow: auto; display: flex; justify-content: center; align-items: center; }
-        canvas { cursor: crosshair; transform-origin: center; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        #canvas-wrapper { 
+            flex: 1; overflow: auto; display: flex; justify-content: center; align-items: center;
+            background-image: radial-gradient(#222 1px, transparent 1px); background-size: 20px 20px;
+        }
+        canvas { 
+            cursor: crosshair; transform-origin: center center; 
+            max-width: none; /* Impedisce al browser di rimpicciolire forzatamente */
+        }
 
-        /* FOOTER BLOCCATO */
-        .bottom-bar { padding: 10px; background: #1a1a1a; border-top: 1px solid #333; }
-        .btn { padding: 10px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; white-space: nowrap; }
+        /* FOOTER BLOCCATO AL FONDO */
+        .bottom-bar { 
+            height: 165px; padding: 12px; background: #1a1a1a; border-top: 1px solid #333; 
+        }
+        .btn { padding: 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 11px; }
         .btn-main { background: var(--accent); color: black; }
         .btn-sec { background: #333; color: white; border: 1px solid #555; }
         
-        .selector-group { display: flex; gap: 5px; margin-bottom: 8px; }
-        .m-btn { flex: 1; padding: 10px; border: none; border-radius: 4px; background: #222; color: #777; font-size: 10px; font-weight: bold; }
+        .selector-group { display: flex; gap: 8px; margin-bottom: 10px; }
+        .m-btn { flex: 1; padding: 10px; border: none; border-radius: 4px; background: #222; color: #777; font-size: 11px; font-weight: bold; }
         .m-btn.active { background: var(--accent); color: black; }
 
-        .ral-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        select { width: 100%; padding: 8px; background: #2a2a2a; color: white; border: 1px solid var(--accent); border-radius: 4px; font-size: 12px; }
-        label { font-size: 9px; color: var(--accent); display: block; margin-bottom: 2px; }
+        .ral-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        select { width: 100%; padding: 10px; background: #2a2a2a; color: white; border: 1px solid var(--accent); border-radius: 6px; font-size: 13px; }
+        label { font-size: 10px; color: var(--accent); display: block; margin-bottom: 4px; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -49,9 +65,9 @@
 
 <div id="viewport">
     <div class="zoom-sidebar">
-        <span>+</span>
-        <input type="range" id="z" class="zoom-slider" min="0.5" max="3" step="0.1" value="1">
-        <span>-</span>
+        <span style="font-weight:bold">+</span>
+        <input type="range" id="z" class="zoom-slider" min="0.1" max="3" step="0.1" value="1">
+        <span style="font-weight:bold">-</span>
     </div>
     <div id="canvas-wrapper">
         <canvas id="canvas"></canvas>
@@ -65,7 +81,7 @@
     </div>
     <div class="ral-grid">
         <div>
-            <label>RAL FACCIATA</label>
+            <label>RAL Facciata</label>
             <select id="r-f">
                 <option value="120,129,133">RAL 7000</option>
                 <option value="164,146,129">RAL 1019</option>
@@ -74,21 +90,22 @@
             </select>
         </div>
         <div>
-            <label>RAL CORNICE</label>
+            <label>RAL Cornice</label>
             <select id="r-c">
                 <option value="241,236,225">RAL 9010</option>
-                <option value="30,84,109">RAL 5009</option>
                 <option value="232,226,204">RAL 1013</option>
+                <option value="30,84,109">RAL 5009</option>
             </select>
         </div>
     </div>
-    <button class="btn btn-sec" style="width:100%; margin-top:8px;" onclick="save()">SALVA PROGETTO</button>
+    <button class="btn btn-sec" style="width:100%; margin-top:10px; background:#444;" onclick="save()">SALVA PROGETTO</button>
 </div>
 
 <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d', {willReadFrequently: true});
     const z = document.getElementById('z');
+    const wrapper = document.getElementById('canvas-wrapper');
     let ori = null;
     let hist = [];
     let mode = 'facciata';
@@ -100,18 +117,27 @@
         r.onload = (ev) => {
             const i = new Image();
             i.onload = () => {
+                // Calcoliamo la scala per far stare la foto nel riquadro senza zoom
+                const maxWidth = wrapper.clientWidth * 0.9;
+                const maxHeight = wrapper.clientHeight * 0.9;
+                const ratio = Math.min(maxWidth / i.width, maxHeight / i.height, 1);
+                
                 canvas.width = i.width;
                 canvas.height = i.height;
                 ctx.drawImage(i, 0, 0);
+                
                 ori = ctx.getImageData(0,0,canvas.width,canvas.height);
                 hist = [ctx.getImageData(0,0,canvas.width,canvas.height)];
-                z.value = 1;
+                
+                // Set iniziale: la foto si adatta al box
+                z.value = ratio.toFixed(2);
                 applyZ();
             };
             i.src = ev.target.result;
         };
         r.readAsDataURL(f);
     };
+
     document.getElementById('cap').onchange = load;
     document.getElementById('up').onchange = load;
 
@@ -122,7 +148,9 @@
     }
 
     z.oninput = applyZ;
-    function applyZ() { canvas.style.transform = `scale(${z.value})`; }
+    function applyZ() { 
+        canvas.style.transform = `scale(${z.value})`; 
+    }
 
     canvas.onclick = (e) => {
         if(!ori) return;
@@ -136,13 +164,10 @@
 
     function fill(sx, sy, col) {
         const cur = ctx.getImageData(0,0,canvas.width,canvas.height);
-        const d = cur.data;
-        const w = canvas.width;
-        const st = [[sx, sy]];
+        const d = cur.data, w = canvas.width, st = [[sx, sy]];
         const p = (sy*w+sx)*4;
         const sR = d[p], sG = d[p+1], sB = d[p+2];
         const vis = new Uint8Array(w * canvas.height);
-
         while(st.length) {
             const [cx, cy] = st.pop();
             const idx = cy*w+cx;
@@ -160,7 +185,7 @@
     }
 
     function undo() { if(hist.length > 1) { hist.pop(); ctx.putImageData(hist[hist.length-1],0,0); } }
-    function save() { const l = document.createElement('a'); l.download='export.png'; l.href=canvas.toDataURL(); l.click(); }
+    function save() { const l = document.createElement('a'); l.download='progetto.png'; l.href=canvas.toDataURL(); l.click(); }
 </script>
 </body>
 </html>
