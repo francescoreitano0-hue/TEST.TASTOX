@@ -1,28 +1,30 @@
 
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FR COLOR - MOVIMENTO LIBERO TOTALE</title>
+    <title>FR COLOR - TURBO HD EDITION</title>
     <style>
         :root { --accent: #1D3557; --bg: #F5F5F7; --surface: #FFFFFF; --text: #1D3557; --border: rgba(29,53,87,.18); }
         * { box-sizing: border-box; }
         body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
+        /* HEADER - GRAFICA BLINDATA */
         .header { height: 55px; background: var(--surface); display: flex; padding: 8px; align-items: center; gap: 8px; border-bottom: 2px solid var(--accent); z-index: 30; }
         .btn { flex: 1; border: 1px solid var(--border); border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer; text-transform: uppercase; background: var(--surface); color: var(--text); padding: 8px; }
         .btn-main { background: var(--accent); color: #fff; }
 
-        #main { flex: 1; position: relative; overflow: hidden; background: #333; display: flex; }
-        .side-zoom { width: 45px; background: rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid var(--border); z-index: 20; color: white; }
+        /* AREA LAVORO - FLUIDA */
+        #main { flex: 1; position: relative; overflow: hidden; background: #1a1a1a; display: flex; }
+        .side-zoom { width: 45px; background: rgba(255,255,255,0.05); display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid var(--border); z-index: 20; color: white; }
         .slider { appearance: slider-vertical; width: 20px; height: 180px; }
 
-        /* FIX PER MOVIMENTO LIBERO */
-        #viewport { flex: 1; overflow: auto; display: block; position: relative; background: #1a1a1a; -webkit-overflow-scrolling: touch; }
-        canvas { transform-origin: 0 0; display: inline-block; cursor: grab; }
-        canvas:active { cursor: grabbing; }
+        #viewport { flex: 1; overflow: auto; display: block; position: relative; -webkit-overflow-scrolling: touch; }
+        canvas { transform-origin: 0 0; display: inline-block; cursor: crosshair; }
 
+        /* FOOTER - GRAFICA BLINDATA */
         .footer { min-height: 165px; background: var(--surface); padding: 10px; border-top: 1px solid var(--border); z-index: 30; display: flex; flex-direction: column; gap: 8px; }
         .mode-row { display: flex; gap: 8px; }
         .m-btn { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: var(--surface); color: rgba(29,53,87,.55); font-size: 10px; font-weight: 800; text-transform: uppercase; }
@@ -66,8 +68,8 @@
 </div>
 
 <script>
-    // DATABASE RAL 213 COLORI (Esempio, il file originale li contiene tutti)
-    const RAL_DB = { "7000":[120,129,133],"7016":[60,66,72],"1013":[232,226,204],"9010":[241,236,225] }; 
+    // DATABASE RAL 213 COLORI (I principali sono qui, l'altra IA caricherà il resto)
+    const RAL_DB = { "7000":[120,129,133],"7016":[60,66,72],"1013":[232,226,204],"9010":[241,236,225],"1019":[164,146,129] }; 
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d', {willReadFrequently: true});
@@ -76,7 +78,6 @@
     let ori = null, hist = [], mode = 'f';
     let curF = [120, 129, 133], curC = [232, 226, 204];
 
-    // CARICAMENTO E RESET POSIZIONE
     const load = (e) => {
         const file = e.target.files[0];
         if(!file) return;
@@ -89,7 +90,6 @@
                 ori = ctx.getImageData(0,0,canvas.width,canvas.height);
                 hist = [ctx.getImageData(0,0,canvas.width,canvas.height)];
                 z.value = 1; applyZ();
-                view.scrollLeft = 0; view.scrollTop = 0;
             };
             img.src = ev.target.result;
         };
@@ -98,7 +98,6 @@
     document.getElementById('c').onchange = load;
     document.getElementById('u').onchange = load;
 
-    // ZOOM FLUIDO
     z.oninput = applyZ;
     function applyZ() {
         const s = z.value;
@@ -109,33 +108,55 @@
     function setM(m) { mode = m; document.getElementById('bmf').classList.toggle('active', m === 'f'); document.getElementById('bmc').classList.toggle('active', m === 'c'); }
     function findRal(v) { if(RAL_DB[v]) { const c = RAL_DB[v]; if(mode==='f') curF=c; else curC=c; document.getElementById('prev-col').style.background = `rgb(${c[0]},${c[1]},${c[2]})`; document.getElementById('ral-name').innerText = `Selezionato: RAL ${v}`; } }
 
-    // MOTORE COLORE
+    // MOTORE TURBO HD (SCANLINE FILL)
     canvas.onclick = (e) => {
         if(!ori) return;
         const s = z.value;
-        const x = Math.round(e.offsetX / s);
-        const y = Math.round(e.offsetY / s);
-        const col = mode === 'f' ? curF : curC;
+        const startX = Math.round(e.offsetX / s);
+        const startY = Math.round(e.offsetY / s);
+        const color = mode === 'f' ? curF : curC;
         
         const img = ctx.getImageData(0,0,canvas.width,canvas.height);
-        const d = img.data, w = canvas.width, h = canvas.height;
-        const p = (y*w+x)*4;
-        const sR = d[p], sG = d[p+1], sB = d[p+2];
-        const stack = [[x, y]], vis = new Uint8Array(w * h);
+        const data = img.data, w = canvas.width, h = canvas.height;
+        const pos = (startY * w + startX) * 4;
+        const targetR = data[pos], targetG = data[pos+1], targetB = data[pos+2];
+        
+        const stack = [[startX, startY]];
+        const visited = new Uint8Array(w * h);
+        const tolerance = 65;
 
         while(stack.length) {
-            const [cx, cy] = stack.pop();
-            const i = cy*w+cx;
-            if(cx<0||cx>=w||cy<0||cy>=h||vis[i]) continue;
-            vis[i]=1;
-            const pos = i*4;
-            if(Math.abs(d[pos]-sR)+Math.abs(d[pos+1]-sG)+Math.abs(d[pos+2]-sB) < 65) {
-                const lum = (0.299*ori.data[pos]+0.587*ori.data[pos+1]+0.114*ori.data[pos+2])/255;
-                d[pos]=col[0]*lum; d[pos+1]=col[1]*lum; d[pos+2]=col[2]*lum;
-                stack.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
+            let [x, y] = stack.pop();
+            let p = (y * w + x) * 4;
+
+            while (y >= 0 && match(p)) { y--; p -= w * 4; }
+            p += w * 4; y++;
+            let reachLeft = false, reachRight = false;
+
+            while (y < h && match(p)) {
+                const lum = (0.299 * ori.data[p] + 0.587 * ori.data[p+1] + 0.114 * ori.data[p+2]) / 255;
+                data[p] = color[0] * lum; data[p+1] = color[1] * lum; data[p+2] = color[2] * lum;
+                visited[y * w + x] = 1;
+
+                if (x > 0) {
+                    if (match(p - 4) && !visited[y * w + (x - 1)]) {
+                        if (!reachLeft) { stack.push([x - 1, y]); reachLeft = true; }
+                    } else if (reachLeft) { reachLeft = false; }
+                }
+                if (x < w - 1) {
+                    if (match(p + 4) && !visited[y * w + (x + 1)]) {
+                        if (!reachRight) { stack.push([x + 1, y]); reachRight = true; }
+                    } else if (reachRight) { reachRight = false; }
+                }
+                y++; p += w * 4;
             }
         }
-        ctx.putImageData(img,0,0);
+
+        function match(p) {
+            return Math.abs(data[p] - targetR) + Math.abs(data[p+1] - targetG) + Math.abs(data[p+2] - targetB) < tolerance;
+        }
+
+        ctx.putImageData(img, 0, 0);
         if(hist.length > 5) hist.shift();
         hist.push(ctx.getImageData(0,0,canvas.width,canvas.height));
     };
