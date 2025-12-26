@@ -3,111 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FR COLOR - TASTO X DEFINITIVO</title>
+    <title>TASTO X - PRO HD</title>
     <style>
-        :root { --accent: #00ff88; --bg: #000; }
-        * { box-sizing: border-box; }
+        :root { --accent: #00ff88; --bg: #000; --ui-panel: #1a1a1a; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; font-family: sans-serif; background: var(--bg); color: white; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* HEADER FISSO */
+        .top-bar { height: 60px; padding: 10px; background: var(--ui-panel); display: flex; gap: 8px; border-bottom: 2px solid var(--accent); z-index: 100; }
         
-        /* Layout */
-        .top-bar { padding: 10px; background: #1a1a1a; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-bottom: 2px solid var(--accent); z-index: 10; }
-        #main-container { flex: 1; position: relative; display: flex; overflow: hidden; background: #0f0f0f; }
+        /* AREA LAVORO BOXATA */
+        #viewport { flex: 1; position: relative; display: flex; overflow: hidden; background: #0a0a0a; border: 1px solid #333; }
         
-        /* Zoom laterale */
-        .zoom-controls { width: 50px; background: #1a1a1a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; border-right: 1px solid #333; z-index: 5; }
+        /* ZOOM LATERALE FISSO */
+        .zoom-panel { width: 50px; background: var(--ui-panel); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; border-right: 1px solid #333; }
         .zoom-slider { appearance: slider-vertical; width: 25px; height: 180px; cursor: pointer; }
 
-        /* Area Canvas con Scrolling */
-        #canvas-wrapper { flex: 1; overflow: auto; display: block; position: relative; -webkit-overflow-scrolling: touch; }
-        canvas { cursor: crosshair; transform-origin: top left; display: block; }
+        /* CONTENITORE FOTO CON SCROLL (PAN) */
+        #canvas-container { flex: 1; overflow: auto; position: relative; display: flex; align-items: flex-start; justify-content: flex-start; }
+        canvas { cursor: crosshair; transform-origin: 0 0; background-color: #111; }
 
-        /* Comandi inferiori */
-        .bottom-bar { padding: 10px; background: #1a1a1a; border-top: 1px solid #333; }
-        .btn { width: 100%; padding: 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
-        .btn-primary { background: var(--accent); color: black; }
-        .btn-secondary { background: #333; color: white; border: 1px solid #555; }
+        /* FOOTER FISSO (SMARTPHONE OK) */
+        .bottom-bar { padding: 12px; background: var(--ui-panel); border-top: 2px solid #333; z-index: 100; }
+        .btn { flex: 1; padding: 12px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; font-size: 13px; text-transform: uppercase; }
+        .btn-camera { background: var(--accent); color: black; }
+        .btn-action { background: #333; color: white; border: 1px solid #555; }
         
-        .selector-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        select { width: 100%; padding: 10px; background: #2a2a2a; color: white; border: 1px solid var(--accent); border-radius: 6px; font-size: 13px; }
-        label { font-size: 9px; color: var(--accent); text-transform: uppercase; display: block; margin-bottom: 3px; }
-        
-        .mode-toggle { display: flex; gap: 5px; margin-bottom: 10px; background: #000; padding: 4px; border-radius: 6px; }
-        .m-btn { flex: 1; padding: 8px; border: none; border-radius: 4px; background: #222; color: #666; font-size: 11px; font-weight: bold; }
+        .mode-selector { display: flex; gap: 5px; margin-bottom: 10px; background: #000; padding: 4px; border-radius: 6px; }
+        .m-btn { flex: 1; padding: 10px; border: none; border-radius: 4px; background: #222; color: #777; font-size: 11px; font-weight: bold; }
         .m-btn.active { background: var(--accent); color: black; }
+
+        .ral-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        select { width: 100%; padding: 10px; background: #2a2a2a; color: white; border: 1px solid var(--accent); border-radius: 6px; }
+        label { font-size: 9px; color: var(--accent); margin-bottom: 3px; display: block; }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
-    <button class="btn btn-primary" onclick="document.getElementById('file').click()">CARICA FOTO</button>
-    <input type="file" id="file" accept="image/*" style="display:none">
-    <button class="btn btn-secondary" onclick="undo()">ANNULLA</button>
+    <button class="btn btn-camera" onclick="document.getElementById('capture').click()">SCATTA FOTO HD</button>
+    <input type="file" id="capture" accept="image/*" capture="environment" style="display:none">
+    
+    <button class="btn btn-action" onclick="document.getElementById('upload').click()">CARICA</button>
+    <input type="file" id="upload" accept="image/*" style="display:none">
+    
+    <button class="btn btn-action" onclick="undo()">ANNULLA</button>
 </div>
 
-<div id="main-container">
-    <div class="zoom-controls">
-        <span>+</span>
-        <input type="range" id="zoom" class="zoom-slider" min="0.2" max="3" step="0.1" value="1">
-        <span>-</span>
+<div id="main-container" style="display:flex; flex:1; overflow:hidden;">
+    <div class="zoom-panel">
+        <span style="font-size:18px">+</span>
+        <input type="range" id="zoom" class="zoom-slider" min="0.5" max="4" step="0.1" value="1">
+        <span style="font-size:18px">-</span>
     </div>
-    <div id="canvas-wrapper">
+    
+    <div id="canvas-container">
         <canvas id="canvas"></canvas>
     </div>
 </div>
 
 <div class="bottom-bar">
-    <div class="mode-toggle">
-        <button id="mode-facciata" class="m-btn active" onclick="setMode('facciata')">USA RAL FACCIATA</button>
-        <button id="mode-cornice" class="m-btn" onclick="setMode('cornice')">USA RAL CORNICE</button>
+    <div class="mode-selector">
+        <button id="mode-facciata" class="m-btn active" onclick="setMode('facciata')">MODO: FACCIATA</button>
+        <button id="mode-cornice" class="m-btn" onclick="setMode('cornice')">MODO: CORNICE</button>
     </div>
 
-    <div class="selector-row">
+    <div class="ral-row">
         <div>
-            <label>RAL Facciata</label>
+            <label>RAL FACCIATA</label>
             <select id="ral-f">
                 <option value="120,129,133">RAL 7000</option>
                 <option value="164,146,129">RAL 1019</option>
                 <option value="60,60,60">RAL 7016</option>
+                <option value="232,226,204">RAL 1013</option>
             </select>
         </div>
         <div>
-            <label>RAL Cornice</label>
+            <label>RAL CORNICE</label>
             <select id="ral-c">
-                <option value="232,226,204">RAL 1013</option>
                 <option value="241,236,225">RAL 9010</option>
+                <option value="232,226,204">RAL 1013</option>
                 <option value="30,84,109">RAL 5009</option>
             </select>
         </div>
     </div>
-    <button class="btn btn-secondary" style="width:100%" onclick="save()">SALVA PROGETTO</button>
+    
+    <button class="btn btn-action" style="width:100%; margin-top:10px; background:#444;" onclick="save()">SALVA PROGETTO</button>
 </div>
 
 <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d', {willReadFrequently: true});
     const zoomSlider = document.getElementById('zoom');
-    const wrapper = document.getElementById('canvas-wrapper');
+    const container = document.getElementById('canvas-container');
+    
     let originalData = null;
     let history = [];
     let currentMode = 'facciata';
 
-    document.getElementById('file').onchange = (e) => {
-        const img = new Image();
-        img.onload = () => {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
-            originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            history = [ctx.getImageData(0, 0, canvas.width, canvas.height)];
-            
-            // RESET ZOOM AL CARICAMENTO
-            zoomSlider.value = 1;
-            applyZoom();
-            wrapper.scrollLeft = 0;
-            wrapper.scrollTop = 0;
+    // Gestione Caricamento/Scatto
+    [document.getElementById('capture'), document.getElementById('upload')].forEach(el => {
+        el.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    history = [ctx.getImageData(0, 0, canvas.width, canvas.height)];
+                    zoomSlider.value = 1;
+                    applyZoom();
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
         };
-        img.src = URL.createObjectURL(e.target.files[0]);
-    };
+    });
 
     function setMode(m) {
         currentMode = m;
@@ -121,11 +136,11 @@
         canvas.style.transform = `scale(${s})`;
     }
 
+    // CLICK PER COLORARE (PRECISO CON ZOOM)
     canvas.onclick = (e) => {
         if(!originalData) return;
         const rect = canvas.getBoundingClientRect();
         const s = zoomSlider.value;
-        // Calcolo coordinate preciso tenendo conto dello zoom
         const x = Math.round((e.clientX - rect.left) / s);
         const y = Math.round((e.clientY - rect.top) / s);
         
@@ -153,7 +168,7 @@
             const pos = idx * 4;
             const diff = Math.abs(data[pos]-sR) + Math.abs(data[pos+1]-sG) + Math.abs(data[pos+2]-sB);
 
-            if (diff < 60) {
+            if (diff < 65) {
                 const lum = (0.299 * originalData.data[pos] + 0.587 * originalData.data[pos+1] + 0.114 * originalData.data[pos+2]) / 255;
                 data[pos] = fillColor[0] * lum;
                 data[pos+1] = fillColor[1] * lum;
@@ -174,8 +189,8 @@
 
     function save() {
         const link = document.createElement('a');
-        link.download = 'fr-color-export.png';
-        link.href = canvas.toDataURL();
+        link.download = 'progetto_frcolor.png';
+        link.href = canvas.toDataURL("image/png", 1.0);
         link.click();
     }
 </script>
