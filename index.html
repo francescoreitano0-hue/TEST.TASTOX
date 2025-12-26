@@ -1,77 +1,67 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TASTO X - Standalone Lab (FR COLOR)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TASTO X PRO - Fix Mobile</title>
     <style>
-        :root { --bg: #121212; --accent: #00ff88; --panel: #1e1e1e; }
-        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; overflow: hidden; }
+        :root { --bg: #0f0f0f; --accent: #00ff88; --panel: #1a1a1a; }
+        body { margin: 0; font-family: sans-serif; background: var(--bg); color: white; display: flex; flex-direction: column; height: 100vh; }
         
-        /* Layout */
-        .app-container { display: flex; flex-direction: column; height: 100vh; }
-        header { padding: 15px; background: var(--panel); border-bottom: 1px solid #333; text-align: center; }
-        
-        #viewer-zone { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 20px; }
-        canvas { max-width: 100%; max-height: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border-radius: 4px; }
+        /* Header compatto */
+        header { padding: 10px; background: #000; font-size: 14px; text-align: center; border-bottom: 2px solid var(--accent); }
 
-        /* Controlli */
-        .ui-panel { background: var(--panel); padding: 20px; display: flex; gap: 20px; justify-content: center; border-top: 1px solid #333; }
-        .slot { background: #2a2a2a; padding: 10px; border-radius: 8px; border: 1px solid #444; text-align: left; }
-        .slot label { display: block; font-size: 10px; text-transform: uppercase; margin-bottom: 5px; color: var(--accent); }
+        /* Area Foto Massimizzata */
+        #viewer { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden; }
+        canvas { max-width: 100%; max-height: 100%; touch-action: none; }
+
+        /* Pannello Comandi Mobile Friendly */
+        .controls { background: var(--panel); padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .full-width { grid-column: span 2; }
         
-        input[type="file"] { display: none; }
-        .btn { background: #333; color: white; border: 1px solid #555; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: 0.2s; }
-        .btn:hover { background: var(--accent); color: black; border-color: var(--accent); }
-        .btn-primary { background: var(--accent); color: black; font-weight: bold; }
+        .btn { background: #333; color: white; border: 1px solid #555; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; width: 100%; }
+        .btn-upload { background: var(--accent); color: black; }
         
-        select { background: #111; color: white; border: 1px solid #444; padding: 5px; border-radius: 4px; }
+        select { background: #2a2a2a; color: white; border: 1px solid var(--accent); padding: 12px; border-radius: 8px; width: 100%; font-size: 14px; }
+        label { display: block; font-size: 10px; color: var(--accent); margin-bottom: 4px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <header>
-        <strong>TASTO X</strong> | Laboratorio Indipendente v2.0
-    </header>
+<header>TASTO X | Laboratorio Professionale</header>
 
-    <div id="viewer-zone">
-        <canvas id="canvas"></canvas>
+<div id="viewer">
+    <canvas id="canvas"></canvas>
+</div>
+
+<div class="controls">
+    <div class="full-width">
+        <button class="btn btn-upload" onclick="document.getElementById('upload').click()">SCATTA O CARICA FOTO</button>
+        <input type="file" id="upload" accept="image/*" style="display:none">
     </div>
 
-    <div class="ui-panel">
-        <div class="slot">
-            <label>Caricamento</label>
-            <button class="btn btn-primary" onclick="document.getElementById('upload').click()">CARICA FOTO CANTIERE</button>
-            <input type="file" id="upload" accept="image/*">
-        </div>
-
-        <div class="slot">
-            <label>Zona 1: Facciata</label>
-            <select id="color-muro" onchange="processRendering()">
-                <option value="none">Seleziona RAL...</option>
-                <option value="120,129,133">RAL 7000 (Grigio)</option>
-                <option value="164,146,129">RAL 1019 (Beige)</option>
-                <option value="107,112,105">RAL 7005 (Sorcio)</option>
-            </select>
-        </div>
-
-        <div class="slot">
-            <label>Zona 2: Cornici</label>
-            <select id="color-cornici" onchange="processRendering()">
-                <option value="none">Seleziona RAL...</option>
-                <option value="30,84,109">RAL 5009 (Azzurro)</option>
-                <option value="241,236,225">RAL 9010 (Bianco)</option>
-                <option value="60,60,60">RAL 7016 (Antracite)</option>
-            </select>
-        </div>
-
-        <div class="slot">
-            <label>Azioni</label>
-            <button class="btn" onclick="resetAll()">RESET</button>
-            <button class="btn" onclick="downloadImage()">SALVA</button>
-        </div>
+    <div>
+        <label>Colore Facciata</label>
+        <select id="color-muro" onchange="applyRendering()">
+            <option value="">Seleziona RAL...</option>
+            <option value="120,129,133">RAL 7000</option>
+            <option value="164,146,129">RAL 1019</option>
+            <option value="60,60,60">RAL 7016</option>
+        </select>
     </div>
+
+    <div>
+        <label>Colore Cornici</label>
+        <select id="color-cornice" onchange="applyRendering()">
+            <option value="">Seleziona RAL...</option>
+            <option value="241,236,225">RAL 9010</option>
+            <option value="30,84,109">RAL 5009</option>
+        </select>
+    </div>
+
+    <button class="btn" onclick="reset()">RESET</button>
+    <button class="btn" onclick="save()">SALVA RISULTATO</button>
 </div>
 
 <script>
@@ -79,75 +69,46 @@
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     let originalData = null;
 
-    // Gestione Caricamento Foto
-    document.getElementById('upload').addEventListener('change', function(e) {
+    document.getElementById('upload').onchange = function(e) {
         const reader = new FileReader();
-        reader.onload = function(event) {
+        reader.onload = (ev) => {
             const img = new Image();
-            img.onload = function() {
+            img.onload = () => {
                 canvas.width = img.width;
                 canvas.height = img.height;
                 ctx.drawImage(img, 0, 0);
                 originalData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                alert("Foto caricata. L'analisi volumetrica è attiva.");
             };
-            img.src = event.target.result;
+            img.src = ev.target.result;
         };
         reader.readAsDataURL(e.target.files[0]);
-    });
+    };
 
-    // Motore di Rendering X-Engine
-    function processRendering() {
+    function applyRendering() {
         if (!originalData) return;
+        const cMuro = document.getElementById('color-muro').value.split(',');
+        const cCornice = document.getElementById('color-cornice').value.split(',');
 
-        const muroColor = document.getElementById('color-muro').value;
-        const corniciColor = document.getElementById('color-cornici').value;
+        const current = new ImageData(new Uint8ClampedArray(originalData.data), originalData.width, originalData.height);
+        const d = current.data;
 
-        const newImgData = new ImageData(
-            new Uint8ClampedArray(originalData.data),
-            originalData.width,
-            originalData.height
-        );
-        const pixels = newImgData.data;
+        for (let i = 0; i < d.length; i += 4) {
+            const lux = (0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]) / 255;
+            
+            // Logica Avanzata: se il pixel è molto chiaro è probabilmente una cornice/marmo
+            const isBright = (d[i] > 170 && d[i+1] > 170 && d[i+2] > 170);
 
-        for (let i = 0; i < pixels.length; i += 4) {
-            // Estrazione luminanza originale (il cuore del realismo)
-            const r = pixels[i];
-            const g = pixels[i+1];
-            const b = pixels[i+2];
-            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-            // LOGICA DI SEGMENTAZIONE AUTOMATICA (SIMULATA)
-            // L'app decide se il pixel appartiene a una cornice basandosi sul contrasto locale
-            const isCornice = (r > 180 && g > 180 && b > 180); // Esempio: zone molto chiare
-
-            if (isCornice && corniciColor !== "none") {
-                applyTone(pixels, i, corniciColor.split(','), luminance);
-            } else if (!isCornice && muroColor !== "none") {
-                applyTone(pixels, i, muroColor.split(','), luminance);
+            if (isBright && cCornice.length > 1) {
+                d[i] = cCornice[0] * lux; d[i+1] = cCornice[1] * lux; d[i+2] = cCornice[2] * lux;
+            } else if (!isBright && cMuro.length > 1) {
+                d[i] = cMuro[0] * lux; d[i+1] = cMuro[1] * lux; d[i+2] = cMuro[2] * lux;
             }
         }
-        ctx.putImageData(newImgData, 0, 0);
+        ctx.putImageData(current, 0, 0);
     }
 
-    function applyTone(pixels, index, rgb, lux) {
-        // Blending avanzato: mix tra il colore scelto e la luce reale della foto
-        pixels[index]     = rgb[0] * (lux * 1.15);
-        pixels[index + 1] = rgb[1] * (lux * 1.15);
-        pixels[index + 2] = rgb[2] * (lux * 1.15);
-    }
-
-    function resetAll() {
-        if (originalData) ctx.putImageData(originalData, 0, 0);
-        document.querySelectorAll('select').forEach(s => s.value = "none");
-    }
-
-    function downloadImage() {
-        const link = document.createElement('a');
-        link.download = 'Rendering_TastoX.png';
-        link.href = canvas.toDataURL();
-        link.click();
-    }
+    function reset() { if(originalData) ctx.putImageData(originalData, 0, 0); }
+    function save() { window.open(canvas.toDataURL()); }
 </script>
 </body>
 </html>
